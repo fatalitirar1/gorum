@@ -1,4 +1,4 @@
-module gormal
+module github.com/fatalitirar1/gorum
 
 go 1.25.0
 
