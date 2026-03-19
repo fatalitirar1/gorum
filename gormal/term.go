@@ -2,6 +2,7 @@ package gormal
 
 import (
 	"fmt"
+	"maps"
 	"os"
 	"syscall"
 	"unsafe"
@@ -86,6 +87,7 @@ func (o OFlag) GetFlagName() string {
 func (o OFlag) uint32() uint32 {
 	return uint32(o)
 }
+
 func (c CFlag) GetFlagName() string {
 	return "Cflag"
 }
@@ -97,6 +99,7 @@ func (c CFlag) uint32() uint32 {
 func (l LFlag) GetFlagName() string {
 	return "Lflag"
 }
+
 func (l LFlag) uint32() uint32 {
 	return uint32(l)
 }
@@ -104,11 +107,13 @@ func (l LFlag) uint32() uint32 {
 func NewGormalStdin() (*Gormal, error) {
 	return NewGormalFromDesctiptor(os.Stdin.Fd())
 }
+
 func NewGormalStdOut() (*Gormal, error) {
 	return NewGormalFromDesctiptor(os.Stdout.Fd())
 }
+
 func NewGormalStdErr() (*Gormal, error) {
-	return NewGormalFromDesctiptor(os.Stdout.Fd())
+	return NewGormalFromDesctiptor(os.Stderr.Fd())
 }
 
 func NewGormalFromDesctiptor(fd uintptr) (*Gormal, error) {
@@ -121,9 +126,7 @@ func NewGormalFromDesctiptor(fd uintptr) (*Gormal, error) {
 	}
 
 	backup := make(map[string]uint32)
-	for k, v := range gorm.termiosFlags {
-		backup[k] = v
-	}
+	maps.Copy(gorm.termiosFlags, backup)
 	gorm.bTermios = backup
 
 	gorm.fd = fd
@@ -142,7 +145,6 @@ func (gorm *Gormal) AppendFlagToSection(flag Flag, section string) error {
 }
 
 func (gorm *Gormal) RowAppendFlagToSection(uFlag uint32, section string) error {
-
 	_, ok := gorm.termiosFlags[section]
 	if !ok {
 		return fmt.Errorf("section not found")
@@ -167,7 +169,6 @@ func (gorm *Gormal) DropFlagFromSection(flag Flag, section string) error {
 }
 
 func (gorm *Gormal) RowDropFlagFromSection(uFlag uint32, section string) error {
-
 	_, ok := gorm.termiosFlags[section]
 	if !ok {
 		return fmt.Errorf("section not found")
@@ -187,11 +188,9 @@ func (gorm *Gormal) CheckFlagInSection(flag Flag, section string) (bool, error) 
 }
 
 func (gorm *Gormal) CheckRowFlaginSection(uFlag uint32, section string) (bool, error) {
-
 	_, ok := gorm.termiosFlags[section]
 	if !ok {
 		return false, fmt.Errorf("section not found")
-
 	}
 
 	return gorm.termiosFlags[section]&uFlag > 0, nil
@@ -205,9 +204,7 @@ func (gorm *Gormal) GetTermios() *unix.Termios {
 
 func (gorm *Gormal) Restore() error {
 	flagMap := make(map[string]uint32)
-	for k, v := range gorm.termiosFlags {
-		flagMap[k] = v
-	}
+	maps.Copy(gorm.bTermios, flagMap)
 	gorm.termiosFlags = flagMap
 	return gorm.tCSet(gorm.fd)
 }
@@ -230,7 +227,6 @@ func (gorm *Gormal) tCGet(fd uintptr) error {
 }
 
 func (gorm *Gormal) tCSet(fd uintptr) error {
-
 	t := &unix.Termios{}
 	gorm.MapToTermios(t)
 
